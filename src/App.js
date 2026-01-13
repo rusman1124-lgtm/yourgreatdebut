@@ -278,7 +278,17 @@ export default function App() {
   }, []);
 
   const schedulePushNotification = (project) => {
-    if (Notification.permission !== 'granted') return;
+    // 1. 브라우저가 알림 기능을 지원하는지 확인
+    if (!('Notification' in window)) {
+      console.warn("이 브라우저는 알림 기능을 지원하지 않습니다.");
+      return; // 알림 설정을 건너뛰고 함수 종료 (에러 방지)
+    }
+
+    // 2. 알림 권한이 허용되었는지 확인
+    if (Notification.permission !== 'granted') {
+      console.warn("알림 권한이 허용되지 않았습니다.");
+      return; // 권한이 없으면 실행하지 않음
+    }
 
     const deadlineDate = new Date(project.deadline);
     const notificationDays = [14, 7, 3, 1]; 
@@ -293,10 +303,15 @@ export default function App() {
         if (alertTime > now) {
           const diff = alertTime.getTime() - now.getTime();
           setTimeout(() => {
-            new Notification("🖋️ 위대한 데뷔: 마감 임박!", {
-              body: `'${project.target}' 공모전 마감이 ${day}일 남았습니다. 집필을 마무리하세요!`,
-              icon: '/logo192.png'
-            });
+            // 3. 실제 알림 발송 시 발생할 수 있는 예외 처리
+            try {
+              new Notification("🖋️ 위대한 데뷔: 마감 임박!", {
+                body: `'${project.target}' 공모전 마감이 ${day}일 남았습니다. 집필을 마무리하세요!`,
+                icon: '/logo192.png'
+              });
+            } catch (e) {
+              console.error("모바일 환경에서 알림 발송 중 오류 발생:", e);
+            }
           }, diff);
         }
       }
